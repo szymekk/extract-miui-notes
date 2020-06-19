@@ -18,6 +18,7 @@ resource_id_base_ = 'com.miui.notes:id/'
 resource_id_section_title = resource_id_base_ + 'section_title'
 resource_id_preview = resource_id_base_ + 'preview'
 resource_id_time = resource_id_base_ + 'time'
+resource_id_note = resource_id_base_ + 'note'
 
 
 def subelements_from_note_view(note_view):
@@ -27,10 +28,14 @@ def subelements_from_note_view(note_view):
         resource_id = subelement['resource-id']
         if resource_id_section_title == resource_id:
             section_view = subelement
-        elif resource_id_preview == resource_id:
-            content_view = subelement
-        elif resource_id_time == resource_id:
-            date_view = subelement
+        elif resource_id_note == resource_id:
+            note = subelement
+            for note_subelement in note.children:
+                note_element_resource_id = note_subelement['resource-id']
+                if resource_id_preview == note_element_resource_id:
+                    content_view = note_subelement
+                elif resource_id_time == note_element_resource_id:
+                    date_view = note_subelement
 
     return section_view, content_view, date_view
 
@@ -43,15 +48,21 @@ def get_y_bounds(view):
 
 
 def is_fully_visible(note_view):
-    if len(note_view.children) < 2:
+    if len(note_view.children) < 1:
         return False
     first_subelement = note_view.children[0]
     last_subelement = note_view.children[-1]
     last_resource_id = last_subelement['resource-id']
 
     first_index_is_zero = (0 == int(first_subelement.index()))
-    last_item_contains_time = (resource_id_time == last_resource_id)
-    return first_index_is_zero and last_item_contains_time
+    if not first_index_is_zero:
+        return False
+    last_item_is_a_note = (resource_id_note == last_resource_id)
+    if not last_item_is_a_note:
+        return False
+    note = last_subelement
+    last_subitem_contains_time = (resource_id_time == note.children[-1]['resource-id'])
+    return last_subitem_contains_time
 
 
 class Note:
